@@ -66,20 +66,15 @@ NODE_ENV=development
 
 ### Why do some node/express libraries not work out in cloud function?
 
-The multer middleware is designed to work with standard Node.js HTTP servers, where it expects the request object to be an instance of http.IncomingMessage. However, Azure Functions wraps the HTTP request object and exposes a simplified version, HttpRequest, which contains properties like query and params. This simplified request object does not include the raw stream that multer requires to parse multipart form-data (Refer https://stackoverflow.com/a/40717096/5544970).
+Many Node.js/Express libraries like `multer` are designed to work with standard Node.js HTTP servers, where they expect the request object to be an instance of `http.IncomingMessageHowever`. However, cloud functions such as Azure Functions wrap the HTTP request object and expose a simplified version, often referred to as HttpRequest. This object includes properties like query and params but does not include the raw stream that certain libraries, such as multer, require to parse multipart form-data. (Refer https://stackoverflow.com/a/40717096/5544970).
 
-Example of the simplified Azure Functions HttpRequest contents:
-```js
-HttpRequest {
-  query: URLSearchParams {},
-  params: {}
-}
-```
-Because of this, multer cannot be directly used with Azure Functions. Alternative packages are also not likely to work. For insrance, the multiparty package uses the `.on` event which multiparty expects, but is absent as the Azure function doesn't include the raw stream. 
+Because of this, multer and similar middleware cannot be directly used with Azure Functions. For instance, the multiparty package relies on the .on event which expects the raw stream, but this stream is not provided by Azure Functions.
 
 ### Alternative: Parsing the multipart form-data manually
 
-You can parse the multipart form-data manually. This involves reading the body of the request and parsing it yourself. While this can be more complex, it's necessary due to the limitations of the Azure Functions request object. This involves two main steps:
+To handle multipart form-data in cloud functions, you can manually parse the data. This involves reading the body of the request and parsing it yourself. While more complex, this method accommodates the limitations of the cloud function's request object. The process involves two main steps:
 
 1. Accumulate Request Data: Collect the data chunks from the request into a buffer.
 2. Parse the Buffer: Use a package like busboy to parse the buffered data manually.
+
+By manually handling the request data and parsing it, you can work around the limitations imposed by cloud functions and effectively manage multipart form-data uploads.
